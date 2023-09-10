@@ -126,7 +126,7 @@ func (service *Enable2FA) Update(c *gin.Context, user *model.User) serializer.Re
 // Init2FA 初始化二步验证
 func (service *SettingService) Init2FA(c *gin.Context, user *model.User) serializer.Response {
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      "Cloudreve",
+		Issuer:      "Aquareve",
 		AccountName: user.Email,
 	})
 	if err != nil {

@@ -282,7 +282,14 @@ func (fs *FileSystem) GetSource(ctx context.Context, fileID uint) (string, error
 
 	source, err := fs.SignURL(ctx, &fs.FileTarget[0], 0, false)
 	if err != nil {
-		return "", serializer.NewError(serializer.CodeNotSet, "Failed to get source link", err)
+
+		// MODIFY START
+
+		util.Log().Error("Failed to get source link: %w", err)
+
+		// MODIFY END
+
+		return "", serializer.NewError(serializer.CodeNotSet, "Failed to get source link: "+err.Error(), err)
 	}
 
 	return source, nil
@@ -302,6 +309,13 @@ func (fs *FileSystem) SignURL(ctx context.Context, file *model.File, ttl int64, 
 	// 生成外链地址
 	source, err := fs.Handler.Source(ctx, fs.FileTarget[0].SourceName, ttl, isDownload, fs.User.Group.SpeedLimit)
 	if err != nil {
+
+		// MODIFY START
+
+		util.Log().Error("Failed to get source link: %w", err)
+
+		// MODIFY END
+
 		return "", serializer.NewError(serializer.CodeNotSet, "Failed to get source link", err)
 	}
 

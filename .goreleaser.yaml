@@ -30,13 +30,7 @@ builds:
       - 6
       - 7
 
-    ignore:
-      - goos: windows
-        goarm: 5
-      - goos: windows
-        goarm: 6
-      - goos: windows
-        goarm: 7
+    ignore: []
 
 archives:
   - format: tar.gz

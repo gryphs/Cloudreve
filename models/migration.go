@@ -2,6 +2,9 @@ package model
 
 import (
 	"context"
+	"sort"
+	"strings"
+
 	"github.com/cloudreve/Cloudreve/v3/models/scripts/invoker"
 	"github.com/cloudreve/Cloudreve/v3/pkg/cache"
 	"github.com/cloudreve/Cloudreve/v3/pkg/conf"
@@ -9,8 +12,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-version"
 	"github.com/jinzhu/gorm"
-	"sort"
-	"strings"
 )
 
 // 是否需要迁移
@@ -166,7 +167,14 @@ func addDefaultUser() {
 	// 未找到初始用户时，则创建
 	if gorm.IsRecordNotFoundError(err) {
 		defaultUser := NewUser()
-		defaultUser.Email = "admin@cloudreve.org"
+
+		// MODIFY START
+
+		// 修改默认用户邮箱
+		defaultUser.Email = "admin@aqmoe.com"
+
+		// MODIFY END
+
 		defaultUser.Nick = "admin"
 		defaultUser.Status = Active
 		defaultUser.GroupID = 1
@@ -178,8 +186,8 @@ func addDefaultUser() {
 			util.Log().Panic("Failed to create initial root user: %s", err)
 		}
 
-		c := color.New(color.FgWhite).Add(color.BgBlack).Add(color.Bold)
-		util.Log().Info("Admin user name: " + c.Sprint("admin@cloudreve.org"))
+		c := color.New(color.FgHiCyan).Add(color.BgBlack).Add(color.Bold)
+		util.Log().Info("Admin user name: " + c.Sprint(defaultUser.Email))
 		util.Log().Info("Admin password: " + c.Sprint(password))
 	}
 }

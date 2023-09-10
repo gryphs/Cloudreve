@@ -2,7 +2,14 @@ package explorer
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
+	"strconv"
+	"strings"
+	"time"
+
 	model "github.com/cloudreve/Cloudreve/v3/models"
 	"github.com/cloudreve/Cloudreve/v3/pkg/auth"
 	"github.com/cloudreve/Cloudreve/v3/pkg/cache"
@@ -13,10 +20,6 @@ import (
 	"github.com/cloudreve/Cloudreve/v3/pkg/serializer"
 	"github.com/cloudreve/Cloudreve/v3/pkg/util"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // CreateUploadSessionService 获取上传凭证服务
@@ -28,6 +31,88 @@ type CreateUploadSessionService struct {
 	LastModified int64  `json:"last_modified"`
 	MimeType     string `json:"mime_type"`
 }
+
+/* --- MODIFY START -- */
+
+func randInt(min int, max int) int {
+	rand.Seed(time.Now().UnixNano())
+	return min + rand.Intn(max-min+1) // 产生 2 到 6 的随机数
+}
+
+// 在随机选择策略时，每个存储策略的最大使用量为 4TB。
+// 本函数用于检查这一点
+func checkUsageLessThan4TB(policyId int) bool {
+	usage := getStorageUsage(int(policyId))
+	if usage < 0 {
+		util.Log().Warning("无法获取存储策略 %d 的存储使用量。请检查。", policyId)
+		return false
+	}
+	GBUsed := bytesToGB(usage)
+	return GBUsed < 4000
+}
+
+func randomValidPolicy() uint {
+	count := 0
+	for {
+		if count > 10 {
+			return uint(0)
+		}
+		id := randInt(2, 6)
+		policy, err := model.GetPolicyByID(uint(id))
+		if err == nil {
+			// 检查上传的单文件大小限制是否不为0，为0时为禁用
+			// util.Log().Info("Policy max size: " + strconv.FormatInt(int64(policy.MaxSize), 10) + " of policy " + strconv.FormatInt(int64(id), 10))
+			if policy.MaxSize > 0 {
+				// 检查该存储策略已用容量
+				if /* checkUsageLessThan4TB(id) */ true {
+					return uint(id)
+				}
+			}
+		}
+
+		count++
+	}
+}
+
+func getStorageUsage(policyID int) int {
+	// 尝试读取缓存
+	cacheKey := "storageusage_" + strconv.Itoa(policyID)
+	if intusage, ok := cache.Get(cacheKey); ok {
+		util.Log().Info("useCache")
+		return intusage.(int)
+	}
+	// 统计策略的文件使用
+	policyIds := make([]uint, 0, 1)
+	policyIds = append(policyIds, uint(0))
+	policyIds = append(policyIds, uint(policyID))
+
+	rows, err := model.DB.Model(&model.File{}).Where("policy_id in (?)", policyIds).
+		Select("policy_id,count(id),sum(size)").Group("policy_id").Rows()
+
+	if err != nil {
+		util.Log().Error("统计文件使用SQL出错: %s", err)
+		return -1
+	}
+
+	for rows.Next() {
+		policyId := uint(0)
+		total := [2]int{}
+		rows.Scan(&policyId, &total[0], &total[1])
+
+		// 写入缓存
+		if policyId == uint(policyID) {
+			_ = cache.Set(cacheKey, total[1], -1)
+			return total[1]
+		}
+	}
+	return -1
+}
+
+func bytesToGB(bytes int) int {
+	return bytes / (1024 * 1024 * 1024)
+}
+
+/* --- MODIFY END -- */
 
 // Create 创建新的上传会话
 func (service *CreateUploadSessionService) Create(ctx context.Context, c *gin.Context) serializer.Response {
@@ -46,6 +131,20 @@ func (service *CreateUploadSessionService) Create(ctx context.Context, c *gin.Co
 	if fs.Policy.ID != rawID {
 		return serializer.Err(serializer.CodePolicyNotAllowed, "存储策略发生变化，请刷新文件列表并重新添加此任务", nil)
 	}
+
+	/* -- MODIFY START -- */
+
+	// 随机为该上传会话的文件系统分配 Policy
+	randPolicyID := randomValidPolicy()
+	if randPolicyID == 0 {
+		err := errors.New("内部错误：没有找到合适的存储策略。请联系管理员。")
+		return serializer.Err(serializer.CodeUploadFailed, err.Error(), err)
+	}
+	policyObj, _ := model.GetPolicyByID(randPolicyID)
+	fs.Policy = &policyObj
+	// util.Log().Warning("Using random policy: " + strconv.FormatInt(int64(randPolicyID), 10))
+
+	/* -- MODIFY END -- */
 
 	file := &fsctx.FileStream{
 		Size:        service.Size,
@@ -99,10 +198,15 @@ func (service *UploadService) LocalUpload(ctx context.Context, c *gin.Context) s
 		return serializer.Err(serializer.CodeUploadSessionExpired, "", err)
 	}
 
+	// MODIFY START
+
+	// 关闭此检查，防止出现 Policy 不支持错误
 	// 重设 fs 存储策略
-	if !uploadSession.Policy.IsTransitUpload(uploadSession.Size) {
+	/** if !uploadSession.Policy.IsTransitUpload(uploadSession.Size) {
 		return serializer.Err(serializer.CodePolicyNotAllowed, "", err)
-	}
+	} **/
+
+	// MODIFY END
 
 	fs.Policy = &uploadSession.Policy
 	if err := fs.DispatchHandler(); err != nil {
