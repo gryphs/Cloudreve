@@ -142,6 +142,7 @@ func (service *CreateUploadSessionService) Create(ctx context.Context, c *gin.Co
 	}
 	policyObj, _ := model.GetPolicyByID(randPolicyID)
 	fs.Policy = &policyObj
+	fs.DispatchHandler()
 	// util.Log().Warning("Using random policy: " + strconv.FormatInt(int64(randPolicyID), 10))
 
 	/* -- MODIFY END -- */
