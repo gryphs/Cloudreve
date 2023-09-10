@@ -3,6 +3,10 @@ package filesystem
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"sync"
+
 	model "github.com/cloudreve/Cloudreve/v3/models"
 	"github.com/cloudreve/Cloudreve/v3/pkg/cluster"
 	"github.com/cloudreve/Cloudreve/v3/pkg/conf"
@@ -22,9 +26,6 @@ import (
 	"github.com/cloudreve/Cloudreve/v3/pkg/serializer"
 	"github.com/gin-gonic/gin"
 	cossdk "github.com/tencentyun/cos-go-sdk-v5"
-	"net/http"
-	"net/url"
-	"sync"
 )
 
 // FSPool 文件系统资源池

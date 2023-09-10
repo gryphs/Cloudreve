@@ -2,6 +2,7 @@ package onedrive
 
 import (
 	"errors"
+
 	"github.com/cloudreve/Cloudreve/v3/pkg/cluster"
 
 	model "github.com/cloudreve/Cloudreve/v3/models"
@@ -56,7 +57,13 @@ func NewClient(policy *model.Policy) (*Client, error) {
 			RefreshToken: policy.AccessKey,
 		},
 		Policy:            policy,
-		ClientID:          policy.BucketName,
+
+		/* MODIFY START */
+
+		ClientID:          policy.AccessKey,
+		
+		/* MODIFY END */
+
 		ClientSecret:      policy.SecretKey,
 		Redirect:          policy.OptionsSerialized.OauthRedirect,
 		Request:           request.NewClient(),

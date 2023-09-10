@@ -31,3 +31,6 @@ conf/conf.ini
 .vscode/
 
 dist/
+
+gitpod.yml
+assets.zip

@@ -314,14 +314,7 @@ func (fs *FileSystem) SignURL(ctx context.Context, file *model.File, ttl int64, 
 
 	// 签名最终URL
 	// 生成外链地址
-
-	// MODIFY START
-
-	fs.Policy = &fs.FileTarget[0].Policy
-	fs.DispatchHandler()
-
-	// MODIFY END
-
+	
 	source, err := fs.Handler.Source(ctx, fs.FileTarget[0].SourceName, ttl, isDownload, fs.User.Group.SpeedLimit)
 	if err != nil {
 
