@@ -23,7 +23,7 @@ func (err OAuthError) Error() string {
 // OAuthURL 获取OAuth认证页面URL
 func (client *Client) OAuthURL(ctx context.Context, scope []string) string {
 	query := url.Values{
-		"client_id":     {client.ClientID},
+		"client_id":     {client.Policy.BucketName},
 		"scope":         {strings.Join(scope, " ")},
 		"response_type": {"code"},
 		"redirect_uri":  {client.Redirect},
@@ -69,7 +69,7 @@ func (client *Client) ObtainToken(ctx context.Context, opts ...Option) (*Credent
 	}
 
 	body := url.Values{
-		"client_id":     {client.ClientID},
+		"client_id":     {client.Policy.BucketName},
 		"redirect_uri":  {client.Redirect},
 		"client_secret": {client.ClientSecret},
 	}
