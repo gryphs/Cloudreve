@@ -1,6 +1,8 @@
 package onedrive
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 
 	"github.com/cloudreve/Cloudreve/v3/pkg/cluster"
@@ -45,6 +47,15 @@ type Endpoints struct {
 	DriverResource string // 要使用的驱动器
 }
 
+// MODIFY START
+
+func GetMD5Hash(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
+}
+
+// MODIFY END
+
 // NewClient 根据存储策略获取新的client
 func NewClient(policy *model.Policy) (*Client, error) {
 	client := &Client{
@@ -56,12 +67,12 @@ func NewClient(policy *model.Policy) (*Client, error) {
 		Credential: &Credential{
 			RefreshToken: policy.AccessKey,
 		},
-		Policy:            policy,
+		Policy: policy,
 
 		/* MODIFY START */
 
-		ClientID:          policy.AccessKey,
-		
+		ClientID: GetMD5Hash(policy.AccessKey),
+
 		/* MODIFY END */
 
 		ClientSecret:      policy.SecretKey,
