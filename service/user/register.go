@@ -2,10 +2,12 @@ package user
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
 	model "github.com/cloudreve/Cloudreve/v3/models"
 	"github.com/cloudreve/Cloudreve/v3/pkg/auth"
+	"github.com/cloudreve/Cloudreve/v3/pkg/conf"
 	"github.com/cloudreve/Cloudreve/v3/pkg/email"
 	"github.com/cloudreve/Cloudreve/v3/pkg/hashid"
 	"github.com/cloudreve/Cloudreve/v3/pkg/serializer"
@@ -27,6 +29,23 @@ func (service *UserRegisterService) Register(c *gin.Context) serializer.Response
 	// 相关设定
 	isEmailRequired := model.IsTrueVal(options["email_active"])
 	defaultGroup := model.GetIntSetting("default_group", 2)
+
+	// MODIFY START
+
+	// 使用 QQ 数字邮箱完成注册，防止滥用用户
+	if conf.RequiredEmailCheckPrefix != "" {
+		var isEmailNameDigital = false
+		_, err := strconv.Atoi(strings.Split(service.UserName, "@")[0])
+		if err == nil {
+			isEmailNameDigital = true
+		}
+		var passedDigitalEmail = (!conf.RequiredDigitalEmailName) || isEmailNameDigital
+		if !(strings.HasSuffix(service.UserName, conf.RequiredEmailCheckPrefix) && passedDigitalEmail) {
+			return serializer.Err(serializer.CodeNotSet, "请使用 QQ 号数字邮箱完成注册。", err)
+		}
+	}
+
+	// MODIFY END
 
 	// 创建新的用户对象
 	user := model.NewUser()

@@ -139,3 +139,10 @@ func Manifest(c *gin.Context) {
 		"background_color": options["pwa_background_color"],
 	})
 }
+
+// 获取 Aquareve 相关信息
+func Aquareve(c *gin.Context) {
+	c.JSON(200, map[string]interface{}{
+		"site_image_url": conf.SiteImageURL,
+	})
+}

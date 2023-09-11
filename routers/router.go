@@ -165,6 +165,11 @@ func InitMasterRouter() *gin.Engine {
 			site.GET("captcha", controllers.Captcha)
 			// 站点全局配置
 			site.GET("config", middleware.CSRFInit(), controllers.SiteConfig)
+
+			// MODIFY START
+			// 获取 Aquareve 配置
+			site.GET("aquareve", controllers.Aquareve)
+			// MODIFY END
 		}
 
 		// 用户相关路由

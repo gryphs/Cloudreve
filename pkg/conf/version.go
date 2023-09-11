@@ -14,3 +14,13 @@ var IsPro = "false"
 
 // LastCommit 最后commit id
 var LastCommit = "a11f819"
+
+/* MODIFY START */
+
+// 严格邮箱限制配置
+var RequiredEmailCheckPrefix = "@qq.com"
+var RequiredDigitalEmailName = true
+// 网站说明图片地址
+var SiteImageURL = "https://pvpin.org/joinme.jpg"
+
+/* MODIFY END */
