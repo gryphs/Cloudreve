@@ -52,4 +52,21 @@ var UnixConfig = &unix{
 	Listen: "",
 }
 
+// MODIFY START
+var AquareveConfig = &aquareve{
+	SiteLoginImageUrl:         "",
+	EmailDomainSuffixOnly:     "",
+	EmailUsernameNumbericOnly: false,
+	EmailCheckFailedMsg:       "",
+	EmailRegisterMsg:          "",
+	UserInodeLimit:            1000,
+	PremiumInodeLimit:         10000,
+	PremiumGroupID:            -1,
+	RandomPolicyMax:           6,
+	ShareReportURL:            "",
+	ShareReportMsg:            "",
+}
+
+// MODIFY END
+
 var OptionOverwrite = map[string]interface{}{}

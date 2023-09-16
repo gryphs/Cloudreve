@@ -33,15 +33,15 @@ func (service *UserRegisterService) Register(c *gin.Context) serializer.Response
 	// MODIFY START
 
 	// 使用 QQ 数字邮箱完成注册，防止滥用用户
-	if conf.RequiredEmailCheckPrefix != "" {
+	if conf.AquareveConfig.EmailDomainSuffixOnly != "" {
 		var isEmailNameDigital = false
 		_, err := strconv.Atoi(strings.Split(service.UserName, "@")[0])
 		if err == nil {
 			isEmailNameDigital = true
 		}
-		var passedDigitalEmail = (!conf.RequiredDigitalEmailName) || isEmailNameDigital
-		if !(strings.HasSuffix(service.UserName, conf.RequiredEmailCheckPrefix) && passedDigitalEmail) {
-			return serializer.Err(serializer.CodeNotSet, "请使用 QQ 号数字邮箱完成注册。", err)
+		var passedDigitalEmail = (!conf.AquareveConfig.EmailUsernameNumbericOnly) || isEmailNameDigital
+		if !(strings.HasSuffix(service.UserName, conf.AquareveConfig.EmailDomainSuffixOnly) && passedDigitalEmail) {
+			return serializer.Err(serializer.CodeNotSet, conf.AquareveConfig.EmailCheckFailedMsg, err)
 		}
 	}
 

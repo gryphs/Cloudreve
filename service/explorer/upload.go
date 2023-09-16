@@ -13,6 +13,7 @@ import (
 	model "github.com/cloudreve/Cloudreve/v3/models"
 	"github.com/cloudreve/Cloudreve/v3/pkg/auth"
 	"github.com/cloudreve/Cloudreve/v3/pkg/cache"
+	"github.com/cloudreve/Cloudreve/v3/pkg/conf"
 	"github.com/cloudreve/Cloudreve/v3/pkg/filesystem"
 	"github.com/cloudreve/Cloudreve/v3/pkg/filesystem/driver/local"
 	"github.com/cloudreve/Cloudreve/v3/pkg/filesystem/fsctx"
@@ -54,10 +55,10 @@ func checkUsageLessThan4TB(policyId int) bool {
 func randomValidPolicy() uint {
 	count := 0
 	for {
-		if count > 10 {
+		if count > 15 {
 			return uint(0)
 		}
-		id := randInt(2, 6)
+		id := randInt(2, conf.AquareveConfig.RandomPolicyMax)
 		policy, err := model.GetPolicyByID(uint(id))
 		if err == nil {
 			// 检查上传的单文件大小限制是否不为0，为0时为禁用
@@ -68,9 +69,10 @@ func randomValidPolicy() uint {
 					return uint(id)
 				}
 			}
+		} else {
+			count++
+			continue
 		}
-
-		count++
 	}
 }
 
@@ -112,6 +114,37 @@ func bytesToGB(bytes int) int {
 	return bytes / (1024 * 1024 * 1024)
 }
 
+func checkUserInodeReachedLimit(user *model.User) bool {
+	// 检查用户是否超过最大文件数量限制
+	userFileTotal := -1
+
+	// 尝试读取缓存
+	cacheKey := "userinodelimited_" + strconv.Itoa(int(user.ID))
+	if intCount, ok := cache.Get(cacheKey); ok {
+		return (intCount.(int) >= 0)
+	}
+
+	model.DB.Model(&model.File{}).Where("user_id = ?", strconv.FormatUint(uint64(user.ID), 10)).Count(&userFileTotal)
+
+	if userFileTotal < 0 {
+		return true
+	}
+
+	userInodeLimit := conf.AquareveConfig.UserInodeLimit
+	premiumInodeLimit := conf.AquareveConfig.PremiumInodeLimit
+	isPremium := (user.GroupID == uint(conf.AquareveConfig.PremiumGroupID))
+	isNotAdmin := (user.GroupID != 1)
+
+	if isNotAdmin {
+		if (isPremium && userFileTotal >= premiumInodeLimit) || ((!isPremium) && userFileTotal >= userInodeLimit) {
+			// 达到限制后，写入缓存，一个小时内直接禁止
+			_ = cache.Set(cacheKey, userFileTotal, 3600)
+			return true
+		}
+	}
+	return false
+}
+
 /* --- MODIFY END -- */
 
 // Create 创建新的上传会话
@@ -133,6 +166,11 @@ func (service *CreateUploadSessionService) Create(ctx context.Context, c *gin.Co
 	}
 
 	/* -- MODIFY START -- */
+
+	if checkUserInodeReachedLimit(fs.User) {
+		err := errors.New("账号用量超限，请联系管理员")
+		return serializer.Err(serializer.CodeUploadFailed, err.Error(), err)
+	}
 
 	// 随机为该上传会话的文件系统分配 Policy
 	randPolicyID := randomValidPolicy()

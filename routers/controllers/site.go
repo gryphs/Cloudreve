@@ -140,9 +140,15 @@ func Manifest(c *gin.Context) {
 	})
 }
 
+// MODIFY START
 // 获取 Aquareve 相关信息
 func Aquareve(c *gin.Context) {
 	c.JSON(200, map[string]interface{}{
-		"site_image_url": conf.SiteImageURL,
+		"site_image_url":     conf.AquareveConfig.SiteLoginImageUrl,
+		"email_register_msg": conf.AquareveConfig.EmailRegisterMsg,
+		"share_report_url":   conf.AquareveConfig.ShareReportURL,
+		"share_report_msg":   conf.AquareveConfig.ShareReportMsg,
 	})
 }
+
+// MODIFY END

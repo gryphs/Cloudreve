@@ -53,7 +53,7 @@ type slave struct {
 type redis struct {
 	Network  string
 	Server   string
-	User	 string
+	User     string
 	Password string
 	DB       string
 }
@@ -68,6 +68,23 @@ type cors struct {
 	SameSite         string
 	Secure           bool
 }
+
+// MODIFY START
+type aquareve struct {
+	SiteLoginImageUrl         string
+	EmailDomainSuffixOnly     string
+	EmailUsernameNumbericOnly bool
+	EmailCheckFailedMsg       string
+	EmailRegisterMsg          string
+	UserInodeLimit            int
+	PremiumInodeLimit         int
+	PremiumGroupID            int
+	RandomPolicyMax           int
+	ShareReportURL            string
+	ShareReportMsg            string
+}
+
+// MODIFY END
 
 var cfg *ini.File
 
@@ -116,6 +133,9 @@ func Init(path string) {
 		"Redis":      RedisConfig,
 		"CORS":       CORSConfig,
 		"Slave":      SlaveConfig,
+		// MODIFY START
+		"Aquareve": AquareveConfig,
+		// MODIFY END
 	}
 	for sectionName, sectionStruct := range sections {
 		err = mapSection(sectionName, sectionStruct)
